@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreshScan</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0f1117;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+        h1 { font-size: 2.5rem; color: #00e676; margin-bottom: 8px; }
+        p.subtitle { color: #888; margin-bottom: 40px; }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            width: 100%;
+            max-width: 900px;
+        }
+        .card {
+            background: #1e1e2e;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #2a2a3e;
+        }
+        .card h2 { font-size: 1rem; color: #888; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
+        #videoContainer { position: relative; }
+        #video {
+            width: 100%;
+            border-radius: 12px;
+            background: #000;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 12px;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-start { background: #00e676; color: #000; }
+        .btn-stop { background: #ff5252; color: white; }
+        .result-box {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            justify-content: center;
+            height: 100%;
+        }
+        .badge {
+            font-size: 2rem;
+            font-weight: 700;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        .Fresh { background: #003d1f; color: #00e676; }
+        .Rotten { background: #3d0000; color: #ff5252; }
+        .Consume { background: #3d2600; color: #ffa726; }
+        .stat {
+            background: #2a2a3e;
+            border-radius: 8px;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stat span:first-child { color: #888; font-size: 0.9rem; }
+        .stat span:last-child { font-weight: 600; font-size: 1.1rem; }
+        #status { text-align: center; color: #888; font-size: 0.85rem; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <h1>🥦 FreshScan</h1>
+    <p class="subtitle">AI-powered food freshness detection in real time</p>
+
+    <div class="container">
+        <div class="card">
+            <h2>📷 Live Camera</h2>
+            <div id="videoContainer">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display:none"></canvas>
+            </div>
+            <button class="btn btn-start" onclick="startCamera()">Start Camera</button>
+            <button class="btn btn-stop" onclick="stopCamera()">Stop Camera</button>
+            <p id="status">Camera inactive</p>
+        </div>
+
+        <div class="card">
+            <h2>📊 Result</h2>
+            <div class="result-box">
+                <div class="badge Fresh" id="categoryBadge">Waiting...</div>
+                <div class="stat">
+                    <span>Confidence</span>
+                    <span id="confidence">—</span>
+                </div>
+                <div class="stat">
+                    <span>Shelf Life</span>
+                    <span id="shelfLife">—</span>
+                </div>
+                <div class="stat">
+                    <span>Status</span>
+                    <span id="statusText">Place fruit in front of camera</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stream = null;
+        let interval = null;
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                document.getElementById('status').textContent = 'Camera active — analyzing every 3 seconds';
+                interval = setInterval(captureAndPredict, 3000);
+            } catch (err) {
+                document.getElementById('status').textContent = 'Camera access denied';
+            }
+        }
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(t => t.stop());
+                stream = null;
+            }
+            if (interval) {
+                clearInterval(interval);
+                interval = null;
+            }
+            document.getElementById('status').textContent = 'Camera inactive';
+        }
+
+        async function captureAndPredict() {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+
+            canvas.toBlob(async (blob) => {
+                const formData = new FormData();
+                formData.append('file', blob, 'frame.jpg');
+
+                try {
+                    const res = await fetch('/predict', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    updateUI(data);
+                } catch (err) {
+                    console.error('Prediction error:', err);
+                }
+            }, 'image/jpeg');
+        }
+
+        function updateUI(data) {
+            const badge = document.getElementById('categoryBadge');
+            badge.textContent = data.category;
+            badge.className = 'badge ' + (data.category === 'Consume Soon' ? 'Consume' : data.category);
+            document.getElementById('confidence').textContent = data.confidence + '%';
+            document.getElementById('shelfLife').textContent = data.shelf_life;
+            document.getElementById('statusText').textContent = '✅ Analysis complete';
+        }
+    </script>
+</body>
+</html>
