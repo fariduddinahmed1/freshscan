@@ -6,174 +6,592 @@
     <title>FreshScan</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg: #0a0a0f;
+            --card: #13131a;
+            --border: #1e1e2e;
+            --green: #00e676;
+            --red: #ff5252;
+            --orange: #ffa726;
+            --text: #e0e0e0;
+            --muted: #666;
+        }
+
         body {
             font-family: 'Segoe UI', sans-serif;
-            background: #0f1117;
-            color: white;
+            background: var(--bg);
+            color: var(--text);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 40px 20px;
         }
-        h1 { font-size: 2.5rem; color: #00e676; margin-bottom: 8px; }
-        p.subtitle { color: #888; margin-bottom: 40px; }
-        .container {
+
+        /* ── Header ── */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 32px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+        }
+        .logo { font-size: 1.4rem; font-weight: 700; color: var(--green); }
+        .logo span { color: white; }
+        .nav-tabs { display: flex; gap: 8px; }
+        .tab {
+            padding: 8px 20px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            background: transparent;
+            color: var(--muted);
+            transition: all 0.2s;
+        }
+        .tab.active { background: var(--green); color: #000; font-weight: 600; }
+        .tab:hover:not(.active) { background: var(--border); color: white; }
+
+        /* ── Pages ── */
+        .page { display: none; padding: 32px; }
+        .page.active { display: block; }
+
+        /* ── Scanner Page ── */
+        .scanner-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 24px;
-            width: 100%;
-            max-width: 900px;
+            max-width: 1100px;
+            margin: 0 auto;
         }
+
         .card {
-            background: #1e1e2e;
+            background: var(--card);
+            border: 1px solid var(--border);
             border-radius: 16px;
             padding: 24px;
-            border: 1px solid #2a2a3e;
         }
-        .card h2 { font-size: 1rem; color: #888; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 1px; }
-        #videoContainer { position: relative; }
+
+        .card-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--muted);
+            margin-bottom: 16px;
+        }
+
         #video {
             width: 100%;
             border-radius: 12px;
             background: #000;
+            min-height: 280px;
         }
+
+        .cam-controls { display: flex; gap: 10px; margin-top: 12px; }
+
         .btn {
-            width: 100%;
-            padding: 12px;
+            flex: 1;
+            padding: 11px;
             border: none;
             border-radius: 8px;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-top: 12px;
+            font-size: 0.9rem;
             font-weight: 600;
+            cursor: pointer;
             transition: opacity 0.2s;
         }
         .btn:hover { opacity: 0.85; }
-        .btn-start { background: #00e676; color: #000; }
-        .btn-stop { background: #ff5252; color: white; }
-        .result-box {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            justify-content: center;
-            height: 100%;
+        .btn-green { background: var(--green); color: #000; }
+        .btn-red { background: var(--red); color: white; }
+        .btn-blue { background: #2979ff; color: white; }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 100%;
+            margin-top: 10px;
         }
-        .badge {
-            font-size: 2rem;
+
+        .scan-btn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 12px;
+            font-size: 1rem;
+            border-radius: 10px;
+            border: none;
+            background: var(--green);
+            color: #000;
             font-weight: 700;
-            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .scan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .scan-btn:hover:not(:disabled) { transform: translateY(-1px); }
+
+        /* ── Result Card ── */
+        .result-badge {
+            font-size: 1.8rem;
+            font-weight: 800;
+            padding: 20px;
             border-radius: 12px;
             text-align: center;
+            margin-bottom: 16px;
+            transition: all 0.3s;
         }
-        .Fresh { background: #003d1f; color: #00e676; }
-        .Rotten { background: #3d0000; color: #ff5252; }
-        .Consume { background: #3d2600; color: #ffa726; }
-        .stat {
-            background: #2a2a3e;
+        .Fresh { background: #003d1f; color: var(--green); border: 1px solid #00e67633; }
+        .Rotten { background: #3d0000; color: var(--red); border: 1px solid #ff525233; }
+        .Consume { background: #3d2600; color: var(--orange); border: 1px solid #ffa72633; }
+        .Waiting { background: var(--border); color: var(--muted); border: 1px solid var(--border); }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-label { color: var(--muted); font-size: 0.85rem; }
+        .stat-value { font-weight: 600; }
+
+        .confidence-bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+        .confidence-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: var(--green);
+            transition: width 0.5s ease;
+        }
+
+        .scan-history { margin-top: 16px; }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: var(--border);
             border-radius: 8px;
-            padding: 12px 16px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+        .history-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        /* ── Shelf Page ── */
+        .shelf-grid {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .input-group { margin-bottom: 14px; }
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+        .input-group input:focus { border-color: var(--green); }
+
+        .shelf-item-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-        .stat span:first-child { color: #888; font-size: 0.9rem; }
-        .stat span:last-child { font-weight: 600; font-size: 1.1rem; }
-        #status { text-align: center; color: #888; font-size: 0.85rem; margin-top: 8px; }
+        .shelf-item-info h3 { font-size: 1rem; margin-bottom: 4px; }
+        .shelf-item-info p { font-size: 0.8rem; color: var(--muted); }
+        .shelf-item-status {
+            text-align: right;
+            font-size: 0.85rem;
+        }
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .pill-fresh { background: #003d1f; color: var(--green); }
+        .pill-rotten { background: #3d0000; color: var(--red); }
+        .pill-consume { background: #3d2600; color: var(--orange); }
+        .pill-unknown { background: var(--border); color: var(--muted); }
+
+        /* ── Settings Page ── */
+        .settings-grid {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* ── Status bar ── */
+        .status-bar {
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--muted);
+            margin-top: 10px;
+            min-height: 20px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--muted);
+            padding: 40px;
+            font-size: 0.9rem;
+        }
+
+        .delete-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--red);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.85rem;
+            display: none;
+        }
+        .alert-success { background: #003d1f; color: var(--green); border: 1px solid #00e67633; }
+        .alert-error { background: #3d0000; color: var(--red); border: 1px solid #ff525233; }
     </style>
 </head>
 <body>
-    <h1>🥦 FreshScan</h1>
-    <p class="subtitle">AI-powered food freshness detection in real time</p>
 
-    <div class="container">
+<header>
+    <div class="logo">Fresh<span>Scan</span> 🥦</div>
+    <div class="nav-tabs">
+        <button class="tab active" onclick="showPage('scanner')">📷 Scanner</button>
+        <button class="tab" onclick="showPage('shelf')">📦 Shelf Tracker</button>
+        <button class="tab" onclick="showPage('settings')">⚙️ Settings</button>
+    </div>
+</header>
+
+<!-- ── SCANNER PAGE ── -->
+<div id="page-scanner" class="page active">
+    <div class="scanner-grid">
         <div class="card">
-            <h2>📷 Live Camera</h2>
-            <div id="videoContainer">
-                <video id="video" autoplay playsinline></video>
-                <canvas id="canvas" style="display:none"></canvas>
+            <div class="card-title">📷 Live Camera</div>
+            <video id="video" autoplay playsinline></video>
+            <canvas id="canvas" style="display:none"></canvas>
+            <div class="cam-controls">
+                <button class="btn btn-green" onclick="startCamera()">Start</button>
+                <button class="btn btn-red" onclick="stopCamera()">Stop</button>
             </div>
-            <button class="btn btn-start" onclick="startCamera()">Start Camera</button>
-            <button class="btn btn-stop" onclick="stopCamera()">Stop Camera</button>
-            <p id="status">Camera inactive</p>
+            <button class="scan-btn" id="scanBtn" onclick="scanOnce()" disabled>
+                🔍 Scan Now
+            </button>
+            <div class="status-bar" id="camStatus">Camera inactive</div>
         </div>
 
-        <div class="card">
-            <h2>📊 Result</h2>
-            <div class="result-box">
-                <div class="badge Fresh" id="categoryBadge">Waiting...</div>
-                <div class="stat">
-                    <span>Confidence</span>
-                    <span id="confidence">—</span>
+        <div>
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-title">📊 Result</div>
+                <div class="result-badge Waiting" id="resultBadge">Waiting for scan...</div>
+                <div class="stat-row">
+                    <span class="stat-label">Confidence</span>
+                    <span class="stat-value" id="confidence">—</span>
                 </div>
-                <div class="stat">
-                    <span>Shelf Life</span>
-                    <span id="shelfLife">—</span>
+                <div class="confidence-bar">
+                    <div class="confidence-fill" id="confidenceFill" style="width:0%"></div>
                 </div>
-                <div class="stat">
-                    <span>Status</span>
-                    <span id="statusText">Place fruit in front of camera</span>
+                <div class="stat-row">
+                    <span class="stat-label">Shelf Life</span>
+                    <span class="stat-value" id="shelfLife">—</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Last Scanned</span>
+                    <span class="stat-value" id="lastScanned">—</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🕐 Scan History</div>
+                <div id="scanHistory">
+                    <div class="empty-state">No scans yet</div>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        let stream = null;
-        let interval = null;
+<!-- ── SHELF TRACKER PAGE ── -->
+<div id="page-shelf" class="page">
+    <div class="shelf-grid">
+        <div>
+            <div class="card">
+                <div class="card-title">➕ Add Item</div>
+                <div class="input-group">
+                    <label>Item Name</label>
+                    <input type="text" id="itemName" placeholder="e.g. Bananas">
+                </div>
+                <div class="input-group">
+                    <label>Shelf Number</label>
+                    <input type="text" id="shelfNumber" placeholder="e.g. A1">
+                </div>
+                <div class="input-group">
+                    <label>Box Number</label>
+                    <input type="text" id="boxNumber" placeholder="e.g. 01">
+                </div>
+                <div class="input-group">
+                    <label>Alert Email (optional)</label>
+                    <input type="email" id="itemEmail" placeholder="alert@email.com">
+                </div>
+                <button class="btn btn-green" style="width:100%" onclick="addShelfItem()">Add Item</button>
+                <div class="alert alert-success" id="addAlert">✅ Item added successfully!</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-title">📦 Tracked Items</div>
+            <div id="shelfList">
+                <div class="empty-state">No items tracked yet</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── SETTINGS PAGE ── -->
+<div id="page-settings" class="page">
+    <div class="settings-grid">
+        <div class="card">
+            <div class="card-title">📧 Email Notifications</div>
+            <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">
+                Get alerts when items become "Consume Soon" or "Rotten"
+            </p>
+            <div class="input-group">
+                <label>Your Gmail Address</label>
+                <input type="email" id="senderEmail" placeholder="your@gmail.com">
+            </div>
+            <div class="input-group">
+                <label>Gmail App Password</label>
+                <input type="password" id="senderPassword" placeholder="xxxx xxxx xxxx xxxx">
+            </div>
+            <div class="input-group">
+                <label>Send Alerts To</label>
+                <input type="email" id="recipientEmail" placeholder="recipient@email.com">
+            </div>
+            <button class="btn btn-green" style="width:100%; margin-bottom:10px" onclick="saveEmailConfig()">
+                Save Configuration
+            </button>
+            <div class="alert alert-success" id="emailAlert">✅ Email configured!</div>
+            <div style="margin-top:16px; padding:14px; background:var(--bg); border-radius:8px; font-size:0.8rem; color:var(--muted);">
+                💡 Use a Gmail App Password, not your regular password.
+                Go to Google Account → Security → 2-Step Verification → App Passwords
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let stream = null;
+    let scanHistory = [];
+
+    // ── Navigation ──
+    function showPage(page) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('page-' + page).classList.add('active');
+        event.target.classList.add('active');
+        if (page === 'shelf') loadShelfItems();
+    }
+
+    // ── Camera ──
+    async function startCamera() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            document.getElementById('video').srcObject = stream;
+            document.getElementById('scanBtn').disabled = false;
+            document.getElementById('camStatus').textContent = '✅ Camera active — press Scan Now to analyze';
+        } catch {
+            document.getElementById('camStatus').textContent = '❌ Camera access denied';
+        }
+    }
+
+    function stopCamera() {
+        if (stream) {
+            stream.getTracks().forEach(t => t.stop());
+            stream = null;
+        }
+        document.getElementById('scanBtn').disabled = true;
+        document.getElementById('camStatus').textContent = 'Camera inactive';
+    }
+
+    // ── Scan Once ──
+    async function scanOnce() {
         const video = document.getElementById('video');
         const canvas = document.getElementById('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
 
-        async function startCamera() {
+        document.getElementById('camStatus').textContent = '⏳ Analyzing...';
+
+        canvas.toBlob(async (blob) => {
+            const formData = new FormData();
+            formData.append('file', blob, 'frame.jpg');
             try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-                document.getElementById('status').textContent = 'Camera active — analyzing every 3 seconds';
-                interval = setInterval(captureAndPredict, 3000);
-            } catch (err) {
-                document.getElementById('status').textContent = 'Camera access denied';
+                const res = await fetch('/predict', { method: 'POST', body: formData });
+                const data = await res.json();
+                updateResult(data);
+                addToHistory(data);
+                document.getElementById('camStatus').textContent = '✅ Scan complete';
+            } catch {
+                document.getElementById('camStatus').textContent = '❌ Scan failed';
             }
+        }, 'image/jpeg');
+    }
+
+    // ── Update Result UI ──
+    function updateResult(data) {
+        const badge = document.getElementById('resultBadge');
+        const cssClass = data.category === 'Consume Soon' ? 'Consume' : data.category;
+        badge.className = 'result-badge ' + cssClass;
+        badge.textContent = (data.category === 'Fresh' ? '✅ ' : data.category === 'Rotten' ? '❌ ' : '⚠️ ') + data.category;
+        document.getElementById('confidence').textContent = data.confidence + '%';
+        document.getElementById('confidenceFill').style.width = data.confidence + '%';
+        document.getElementById('confidenceFill').style.background =
+            data.category === 'Fresh' ? 'var(--green)' :
+            data.category === 'Rotten' ? 'var(--red)' : 'var(--orange)';
+        document.getElementById('shelfLife').textContent = data.shelf_life;
+        document.getElementById('lastScanned').textContent = data.timestamp || new Date().toLocaleTimeString();
+    }
+
+    // ── Scan History ──
+    function addToHistory(data) {
+        scanHistory.unshift(data);
+        if (scanHistory.length > 5) scanHistory.pop();
+        const container = document.getElementById('scanHistory');
+        container.innerHTML = scanHistory.map(s => `
+            <div class="history-item">
+                <div style="display:flex; align-items:center">
+                    <div class="history-dot" style="background:${
+                        s.category === 'Fresh' ? 'var(--green)' :
+                        s.category === 'Rotten' ? 'var(--red)' : 'var(--orange)'
+                    }"></div>
+                    ${s.category}
+                </div>
+                <div style="color:var(--muted)">${s.confidence}% — ${s.shelf_life}</div>
+                <div style="color:var(--muted)">${s.timestamp || ''}</div>
+            </div>
+        `).join('');
+    }
+
+    // ── Shelf Tracker ──
+    async function addShelfItem() {
+        const name = document.getElementById('itemName').value.trim();
+        const shelf = document.getElementById('shelfNumber').value.trim();
+        const box = document.getElementById('boxNumber').value.trim();
+        const email = document.getElementById('itemEmail').value.trim();
+
+        if (!name || !shelf || !box) return alert('Please fill in item name, shelf and box number');
+
+        await fetch('/shelf/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_name: name, shelf_number: shelf, box_number: box, email })
+        });
+
+        document.getElementById('addAlert').style.display = 'block';
+        setTimeout(() => document.getElementById('addAlert').style.display = 'none', 3000);
+        document.getElementById('itemName').value = '';
+        document.getElementById('shelfNumber').value = '';
+        document.getElementById('boxNumber').value = '';
+        document.getElementById('itemEmail').value = '';
+        loadShelfItems();
+    }
+
+    async function loadShelfItems() {
+        const res = await fetch('/shelf/all');
+        const data = await res.json();
+        const container = document.getElementById('shelfList');
+        const items = Object.values(data);
+
+        if (items.length === 0) {
+            container.innerHTML = '<div class="empty-state">No items tracked yet</div>';
+            return;
         }
 
-        function stopCamera() {
-            if (stream) {
-                stream.getTracks().forEach(t => t.stop());
-                stream = null;
-            }
-            if (interval) {
-                clearInterval(interval);
-                interval = null;
-            }
-            document.getElementById('status').textContent = 'Camera inactive';
-        }
+        container.innerHTML = items.map(item => {
+            const latest = item.latest;
+            const pillClass = !latest ? 'pill-unknown' :
+                latest.category === 'Fresh' ? 'pill-fresh' :
+                latest.category === 'Rotten' ? 'pill-rotten' : 'pill-consume';
+            return `
+                <div class="shelf-item-card">
+                    <div class="shelf-item-info">
+                        <h3>${item.item_name}</h3>
+                        <p>Shelf ${item.shelf_number} · Box ${item.box_number} · Added ${item.added_at}</p>
+                    </div>
+                    <div class="shelf-item-status">
+                        <div class="status-pill ${pillClass}">
+                            ${latest ? latest.category : 'Not scanned'}
+                        </div>
+                        ${latest ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:4px">${latest.shelf_life}</div>` : ''}
+                    </div>
+                    <button class="delete-btn" onclick="deleteItem('${item.shelf_number}', '${item.box_number}')">Remove</button>
+                </div>
+            `;
+        }).join('');
+    }
 
-        async function captureAndPredict() {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
+    async function deleteItem(shelf, box) {
+        await fetch(`/shelf/${shelf}/${box}`, { method: 'DELETE' });
+        loadShelfItems();
+    }
 
-            canvas.toBlob(async (blob) => {
-                const formData = new FormData();
-                formData.append('file', blob, 'frame.jpg');
+    // ── Email Config ──
+    async function saveEmailConfig() {
+        const sender = document.getElementById('senderEmail').value;
+        const password = document.getElementById('senderPassword').value;
+        const recipient = document.getElementById('recipientEmail').value;
 
-                try {
-                    const res = await fetch('/predict', { method: 'POST', body: formData });
-                    const data = await res.json();
-                    updateUI(data);
-                } catch (err) {
-                    console.error('Prediction error:', err);
-                }
-            }, 'image/jpeg');
-        }
+        await fetch('/config/email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                sender_email: sender,
+                sender_password: password,
+                recipient_email: recipient
+            })
+        });
 
-        function updateUI(data) {
-            const badge = document.getElementById('categoryBadge');
-            badge.textContent = data.category;
-            badge.className = 'badge ' + (data.category === 'Consume Soon' ? 'Consume' : data.category);
-            document.getElementById('confidence').textContent = data.confidence + '%';
-            document.getElementById('shelfLife').textContent = data.shelf_life;
-            document.getElementById('statusText').textContent = '✅ Analysis complete';
-        }
-    </script>
+        document.getElementById('emailAlert').style.display = 'block';
+        setTimeout(() => document.getElementById('emailAlert').style.display = 'none', 3000);
+    }
+</script>
 </body>
 </html>
