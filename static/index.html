@@ -86,8 +86,7 @@ nav { display: flex; gap: 2px; }
   display: flex; flex-direction: column;
 }
 .cam-feed {
-  flex: 1; position: relative; background: #000; overflow: hidden;
-  min-height: 0;
+  flex: 1; position: relative; background: #000; overflow: hidden; min-height: 0;
 }
 #video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cam-overlay {
@@ -140,24 +139,22 @@ canvas { display: none; }
   background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); padding: 22px; transition: border-color 0.4s;
 }
-.result-card.state-fresh { border-color: rgba(181,242,61,0.22); }
+.result-card.state-fresh  { border-color: rgba(181,242,61,0.22); }
 .result-card.state-rotten { border-color: rgba(255,107,107,0.22); }
-.result-card.state-consume { border-color: rgba(255,184,77,0.22); }
+.result-card.state-consume{ border-color: rgba(255,184,77,0.22); }
 .result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
 .result-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
-.result-status {
-  font-size: 1.5rem; font-weight: 300; letter-spacing: -0.03em; margin-top: 3px; transition: color 0.4s;
-}
+.result-status { font-size: 1.5rem; font-weight: 300; letter-spacing: -0.03em; margin-top: 3px; transition: color 0.4s; }
 .s-fresh { color: var(--green); } .s-rotten { color: var(--red); }
 .s-consume { color: var(--orange); } .s-waiting { color: var(--muted2); }
 .r-badge {
   padding: 4px 11px; border-radius: 20px; font-size: 0.7rem;
   font-weight: 500; letter-spacing: 0.04em; font-family: 'DM Mono', monospace; flex-shrink: 0;
 }
-.b-fresh { background: var(--green-dim); color: var(--green); }
-.b-rotten { background: var(--red-dim); color: var(--red); }
-.b-consume { background: var(--orange-dim); color: var(--orange); }
-.b-waiting { background: var(--surface2); color: var(--muted); }
+.b-fresh  { background: var(--green-dim); color: var(--green); }
+.b-rotten { background: var(--red-dim);   color: var(--red); }
+.b-consume{ background: var(--orange-dim);color: var(--orange); }
+.b-waiting{ background: var(--surface2);  color: var(--muted); }
 .conf-section { margin-bottom: 18px; }
 .conf-header { display: flex; justify-content: space-between; margin-bottom: 7px; }
 .conf-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
@@ -184,7 +181,7 @@ canvas { display: none; }
 .h-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
 .h-cat { font-size: 0.82rem; font-weight: 500; flex: 1; }
 .h-pct { font-family: 'DM Mono', monospace; font-size: 0.73rem; color: var(--muted); }
-.h-ts { font-size: 0.7rem; color: var(--muted2); }
+.h-ts  { font-size: 0.7rem; color: var(--muted2); }
 .empty-msg { text-align: center; padding: 28px; font-size: 0.78rem; color: var(--muted2); }
 
 /* Detect */
@@ -218,8 +215,7 @@ canvas { display: none; }
 .det-right { text-align: right; }
 .det-pill {
   padding: 3px 9px; border-radius: 10px; font-size: 0.68rem;
-  font-weight: 500; font-family: 'DM Mono', monospace; letter-spacing: 0.03em;
-  display: inline-block;
+  font-weight: 500; font-family: 'DM Mono', monospace; letter-spacing: 0.03em; display: inline-block;
 }
 .det-pct { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
 
@@ -250,10 +246,10 @@ canvas { display: none; }
   border-radius: var(--radius); padding: 22px;
 }
 .shelf-item {
-  display: flex; align-items: center; gap: 14px;
+  display: flex; align-items: center; gap: 12px;
   padding: 13px 14px; background: var(--surface2);
   border: 1px solid var(--border); border-radius: var(--radius-sm);
-  margin-bottom: 7px; transition: border-color 0.2s;
+  margin-bottom: 8px; transition: border-color 0.2s;
 }
 .shelf-item:hover { border-color: var(--border-hover); }
 .item-icon {
@@ -264,6 +260,17 @@ canvas { display: none; }
 .item-info { flex: 1; }
 .item-name { font-size: 0.88rem; font-weight: 500; }
 .item-meta { font-size: 0.73rem; color: var(--muted); margin-top: 2px; }
+.item-status { text-align: right; min-width: 90px; }
+
+/* Scan item button */
+.btn-scan-item {
+  background: var(--green-dim); border: 1px solid rgba(181,242,61,0.2);
+  color: var(--green); padding: 6px 13px; border-radius: 6px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.75rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.btn-scan-item:hover { background: rgba(181,242,61,0.14); border-color: rgba(181,242,61,0.4); }
+
 .remove-btn {
   background: transparent; border: none; color: var(--muted2);
   cursor: pointer; padding: 5px 8px; border-radius: 6px;
@@ -430,7 +437,7 @@ let dStream=null, dInterval=null;
 function toast(msg) {
   const t=document.getElementById('toast');
   t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2200);
+  setTimeout(()=>t.classList.remove('show'),2400);
 }
 
 function showPage(id,btn) {
@@ -441,6 +448,7 @@ function showPage(id,btn) {
   if(id==='shelf') loadShelf();
 }
 
+// ── Scanner ──
 async function startCamera() {
   try {
     stream=await navigator.mediaDevices.getUserMedia({video:true});
@@ -464,23 +472,20 @@ async function scanOnce(save=true) {
   const v=document.getElementById('video'), c=document.getElementById('canvas');
   c.width=v.videoWidth; c.height=v.videoHeight;
   c.getContext('2d').drawImage(v,0,0);
-
-  const btn = document.getElementById('scanBtn');
-  if(save) { btn.disabled=true; btn.textContent='Analyzing...'; }
-
+  const btn=document.getElementById('scanBtn');
+  if(save){btn.disabled=true; btn.textContent='Analyzing...';}
   c.toBlob(async blob=>{
     const fd=new FormData(); fd.append('file',blob,'frame.jpg');
     try {
       const r=await fetch('/predict',{method:'POST',body:fd});
       const d=await r.json();
       updateResult(d);
-      if(save){ addHistory(d); toast('Scan saved'); }
+      if(save){addHistory(d); toast('Scan saved');}
     } catch { if(save) toast('Scan failed'); }
-    finally {
-      if(save) { btn.disabled=false; btn.textContent='Save scan'; }
-    }
+    finally { if(save){btn.disabled=false; btn.textContent='Save scan';} }
   },'image/jpeg');
 }
+
 function updateResult(d) {
   const cat=d.category;
   const key=cat==='Consume Soon'?'consume':cat.toLowerCase();
@@ -511,6 +516,7 @@ function addHistory(d) {
     </div>`).join('');
 }
 
+// ── Detect ──
 async function startDetect() {
   try {
     dStream=await navigator.mediaDevices.getUserMedia({video:true});
@@ -556,6 +562,7 @@ async function runDetect() {
   },'image/jpeg');
 }
 
+// ── Shelf ──
 async function addItem() {
   const name=document.getElementById('itemName').value.trim();
   const shelf=document.getElementById('shelfNumber').value.trim();
@@ -579,19 +586,41 @@ async function loadShelf() {
     ?'<div class="empty-msg">No items tracked</div>'
     :items.map(item=>{
       const l=item.latest;
-      return `<div class="shelf-item">
+      return `
+      <div class="shelf-item">
         <div class="item-icon">📦</div>
         <div class="item-info">
           <div class="item-name">${item.item_name}</div>
           <div class="item-meta">Shelf ${item.shelf_number} · Box ${item.box_number}</div>
         </div>
-        <div style="text-align:right">
+        <div class="item-status">
           <div class="det-pill ${l?(pm[l.category]||'b-waiting'):'b-waiting'}">${l?l.category:'Not scanned'}</div>
           ${l?`<div class="det-pct" style="margin-top:4px">${l.shelf_life}</div>`:''}
         </div>
+        <button class="btn-scan-item" onclick="scanShelfItem('${item.shelf_number}','${item.box_number}',this)">Scan</button>
         <button class="remove-btn" onclick="removeItem('${item.shelf_number}','${item.box_number}')">Remove</button>
       </div>`;
     }).join('');
+}
+
+async function scanShelfItem(shelf, box, btn) {
+  if(!stream){ toast('Start the Scanner camera first'); return; }
+  const v=document.getElementById('video');
+  const c=document.createElement('canvas');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  btn.textContent='Scanning...'; btn.disabled=true;
+  c.toBlob(async blob=>{
+    const fd=new FormData(); fd.append('file',blob,'frame.jpg');
+    try {
+      const r=await fetch(`/shelf/scan/${shelf}/${box}`,{method:'POST',body:fd});
+      const d=await r.json();
+      const sent=d.email_sent;
+      toast(`${d.category} · ${sent?'📧 Alert sent!':'No alert needed'}`);
+      loadShelf();
+    } catch { toast('Scan failed'); }
+    finally { btn.textContent='Scan'; btn.disabled=false; }
+  },'image/jpeg');
 }
 
 async function removeItem(shelf,box) {
@@ -599,6 +628,7 @@ async function removeItem(shelf,box) {
   toast('Removed'); loadShelf();
 }
 
+// ── Email ──
 async function saveEmail() {
   await fetch('/config/email',{
     method:'POST',headers:{'Content-Type':'application/json'},
