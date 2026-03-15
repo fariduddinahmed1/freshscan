@@ -1,3 +1,27 @@
+from ultralytics import YOLO
+
+# Load YOLOv8
+yolo_model = YOLO('yolov8n.pt')
+FRUIT_CLASSES = ['apple', 'banana', 'orange']
+
+def detect_fruits(image_bytes):
+    img_array = np.frombuffer(image_bytes, np.uint8)
+    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
+    results = yolo_model(img)
+    detections = []
+    for result in results:
+        for box in result.boxes:
+            class_id = int(box.cls[0])
+            class_name = yolo_model.names[class_id]
+            confidence = float(box.conf[0])
+            if class_name in FRUIT_CLASSES and confidence > 0.4:
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                detections.append({
+                    "class": class_name,
+                    "confidence": round(confidence * 100, 2),
+                    "bbox": [x1, y1, x2, y2]
+                })
+    return detections, img
 from fastapi import FastAPI, File, UploadFile
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +37,8 @@ from datetime import datetime
 from typing import Optional
 import json
 import os
+import cv2
+import base64
 
 app = FastAPI(title="FreshScan API")
 
@@ -201,5 +227,66 @@ def delete_shelf_item(shelf_number: str, box_number: str):
         del shelf_data[key]
         return {"status": "Deleted"}
     return {"status": "Not found"}
+
+
+
+@app.post("/detect")
+async def detect(file: UploadFile = File(...)):
+    contents = await file.read()
+    
+    # Step 1 - YOLOv8 detects fruits and locations
+    detections, img = detect_fruits(contents)
+    
+    results = []
+    
+    for det in detections:
+        x1, y1, x2, y2 = det['bbox']
+        
+        # Step 2 - Crop detected fruit
+        cropped = img[y1:y2, x1:x2]
+        
+        # Step 3 - Convert crop to bytes for MobileNetV2
+        _, buffer = cv2.imencode('.jpg', cropped)
+        crop_bytes = buffer.tobytes()
+        
+        # Step 4 - MobileNetV2 classifies the crop
+        processed = preprocess_image(crop_bytes)
+        prediction = model.predict(processed)
+        confidence = float(np.max(prediction)) * 100
+        label = LABELS[np.argmax(prediction)]
+
+        if label == 'fresh' and confidence >= 85:
+            category = 'Fresh'
+            shelf_life = f"{int(confidence / 20) + 2} days"
+        elif label == 'fresh' and confidence < 85:
+            category = 'Consume Soon'
+            shelf_life = "1-2 days"
+        else:
+            category = 'Rotten'
+            shelf_life = "Discard immediately"
+
+        # Step 5 - Draw box on image
+        color = (0, 255, 0) if category == 'Fresh' else (0, 0, 255) if category == 'Rotten' else (0, 165, 255)
+        cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+        cv2.putText(img, f"{det['class']} - {category} {confidence:.0f}%",
+                   (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+
+        results.append({
+            "fruit": det['class'],
+            "category": category,
+            "confidence": round(confidence, 2),
+            "shelf_life": shelf_life,
+            "bbox": det['bbox']
+        })
+
+    # Step 6 - Encode annotated image to base64
+    _, buffer = cv2.imencode('.jpg', img)
+    img_base64 = base64.b64encode(buffer).decode('utf-8')
+
+    return {
+        "detections": results,
+        "annotated_image": img_base64,
+        "count": len(results)
+    }
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
