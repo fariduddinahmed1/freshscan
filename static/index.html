@@ -464,17 +464,23 @@ async function scanOnce(save=true) {
   const v=document.getElementById('video'), c=document.getElementById('canvas');
   c.width=v.videoWidth; c.height=v.videoHeight;
   c.getContext('2d').drawImage(v,0,0);
+
+  const btn = document.getElementById('scanBtn');
+  if(save) { btn.disabled=true; btn.textContent='Analyzing...'; }
+
   c.toBlob(async blob=>{
     const fd=new FormData(); fd.append('file',blob,'frame.jpg');
     try {
       const r=await fetch('/predict',{method:'POST',body:fd});
       const d=await r.json();
       updateResult(d);
-      if(save){addHistory(d);toast('Scan saved');}
+      if(save){ addHistory(d); toast('Scan saved'); }
     } catch { if(save) toast('Scan failed'); }
+    finally {
+      if(save) { btn.disabled=false; btn.textContent='Save scan'; }
+    }
   },'image/jpeg');
 }
-
 function updateResult(d) {
   const cat=d.category;
   const key=cat==='Consume Soon'?'consume':cat.toLowerCase();
