@@ -1,597 +1,609 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FreshScan</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
-        :root {
-            --bg: #0a0a0f;
-            --card: #13131a;
-            --border: #1e1e2e;
-            --green: #00e676;
-            --red: #ff5252;
-            --orange: #ffa726;
-            --text: #e0e0e0;
-            --muted: #666;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FreshScan</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #080808;
+  --surface: #0f0f0f;
+  --surface2: #161616;
+  --border: rgba(255,255,255,0.06);
+  --border-hover: rgba(255,255,255,0.12);
+  --text: #f0f0f0;
+  --muted: rgba(255,255,255,0.35);
+  --muted2: rgba(255,255,255,0.18);
+  --green: #b5f23d;
+  --green-dim: rgba(181,242,61,0.08);
+  --red: #ff6b6b;
+  --red-dim: rgba(255,107,107,0.08);
+  --orange: #ffb84d;
+  --orange-dim: rgba(255,184,77,0.08);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+html, body { height: 100%; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg); color: var(--text);
+  min-height: 100vh; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9999; opacity: 0.35;
+}
+.app { display: flex; flex-direction: column; height: 100vh; }
 
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
+/* Header */
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px; height: 60px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8,8,8,0.94); backdrop-filter: blur(20px);
+  position: sticky; top: 0; z-index: 100; flex-shrink: 0;
+}
+.wordmark {
+  font-size: 1rem; font-weight: 500; letter-spacing: -0.01em;
+  display: flex; align-items: center; gap: 10px;
+}
+.wdot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--green); box-shadow: 0 0 8px var(--green);
+  animation: wdotpulse 2.5s ease-in-out infinite;
+}
+@keyframes wdotpulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50% { opacity:0.4; transform:scale(0.75); }
+}
+nav { display: flex; gap: 2px; }
+.nav-btn {
+  padding: 7px 16px; border-radius: 8px; border: none;
+  background: transparent; color: var(--muted);
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+  cursor: pointer; transition: all 0.18s;
+}
+.nav-btn:hover { color: var(--text); background: var(--surface2); }
+.nav-btn.active { background: var(--surface2); color: var(--text); font-weight: 500; }
 
-        /* ── Header ── */
-        header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 16px 32px;
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
-        }
-        .logo { font-size: 1.4rem; font-weight: 700; color: var(--green); }
-        .logo span { color: white; }
-        .nav-tabs { display: flex; gap: 8px; }
-        .tab {
-            padding: 8px 20px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.9rem;
-            background: transparent;
-            color: var(--muted);
-            transition: all 0.2s;
-        }
-        .tab.active { background: var(--green); color: #000; font-weight: 600; }
-        .tab:hover:not(.active) { background: var(--border); color: white; }
+/* Pages */
+.page { display: none; flex: 1; overflow-y: auto; padding: 32px 40px; }
+.page.active { display: block; }
 
-        /* ── Pages ── */
-        .page { display: none; padding: 32px; }
-        .page.active { display: block; }
+/* Scanner */
+.scan-layout {
+  display: grid; grid-template-columns: 1fr 400px;
+  gap: 20px; max-width: 1120px; margin: 0 auto;
+  height: calc(100vh - 124px);
+}
+.cam-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.cam-feed {
+  flex: 1; position: relative; background: #000; overflow: hidden;
+  min-height: 0;
+}
+#video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cam-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center;
+  justify-content: center; flex-direction: column; gap: 10px;
+  background: rgba(0,0,0,0.75); transition: opacity 0.3s;
+}
+.cam-overlay.hidden { opacity: 0; pointer-events: none; }
+.cam-overlay-icon { font-size: 2rem; opacity: 0.3; }
+.cam-overlay-text { font-size: 0.75rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+.scan-line {
+  position: absolute; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  opacity: 0; animation: scanline 2s linear infinite; pointer-events: none;
+}
+.scanning .scan-line { opacity: 1; }
+@keyframes scanline { 0% { top: 0%; } 100% { top: 100%; } }
+.cam-feed::before, .cam-feed::after, .cbl, .cbr {
+  content: ''; position: absolute; width: 24px; height: 24px;
+  opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 2;
+}
+.scanning .cam-feed::before, .scanning .cam-feed::after,
+.scanning .cbl, .scanning .cbr { opacity: 1; }
+.cam-feed::before { top: 14px; left: 14px; border-top: 1.5px solid var(--green); border-left: 1.5px solid var(--green); }
+.cam-feed::after  { top: 14px; right: 14px; border-top: 1.5px solid var(--green); border-right: 1.5px solid var(--green); }
+.cbl { bottom: 14px; left: 14px; border-bottom: 1.5px solid var(--green); border-left: 1.5px solid var(--green); }
+.cbr { bottom: 14px; right: 14px; border-bottom: 1.5px solid var(--green); border-right: 1.5px solid var(--green); }
+canvas { display: none; }
+.cam-controls {
+  padding: 14px 18px; display: flex; gap: 8px;
+  border-top: 1px solid var(--border);
+}
+.btn {
+  flex: 1; padding: 10px 14px; border-radius: var(--radius-sm); border: none;
+  font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500;
+  cursor: pointer; transition: all 0.18s;
+}
+.btn-primary { background: var(--green); color: #0c1f00; }
+.btn-primary:hover { background: #c8ff52; }
+.btn-primary:disabled { background: var(--surface2); color: var(--muted2); cursor: not-allowed; }
+.btn-ghost { background: var(--surface2); color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: var(--border-hover); }
+.btn-save { background: var(--surface2); color: var(--green); border: 1px solid rgba(181,242,61,0.18); }
+.btn-save:hover { background: rgba(181,242,61,0.07); border-color: rgba(181,242,61,0.35); }
+.btn-save:disabled { opacity: 0.3; cursor: not-allowed; }
 
-        /* ── Scanner Page ── */
-        .scanner-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
+/* Right panel */
+.right-panel { display: flex; flex-direction: column; gap: 16px; overflow-y: auto; }
+.result-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px; transition: border-color 0.4s;
+}
+.result-card.state-fresh { border-color: rgba(181,242,61,0.22); }
+.result-card.state-rotten { border-color: rgba(255,107,107,0.22); }
+.result-card.state-consume { border-color: rgba(255,184,77,0.22); }
+.result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+.result-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+.result-status {
+  font-size: 1.5rem; font-weight: 300; letter-spacing: -0.03em; margin-top: 3px; transition: color 0.4s;
+}
+.s-fresh { color: var(--green); } .s-rotten { color: var(--red); }
+.s-consume { color: var(--orange); } .s-waiting { color: var(--muted2); }
+.r-badge {
+  padding: 4px 11px; border-radius: 20px; font-size: 0.7rem;
+  font-weight: 500; letter-spacing: 0.04em; font-family: 'DM Mono', monospace; flex-shrink: 0;
+}
+.b-fresh { background: var(--green-dim); color: var(--green); }
+.b-rotten { background: var(--red-dim); color: var(--red); }
+.b-consume { background: var(--orange-dim); color: var(--orange); }
+.b-waiting { background: var(--surface2); color: var(--muted); }
+.conf-section { margin-bottom: 18px; }
+.conf-header { display: flex; justify-content: space-between; margin-bottom: 7px; }
+.conf-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.conf-val { font-family: 'DM Mono', monospace; font-size: 0.8rem; }
+.conf-track { height: 2px; background: var(--surface2); border-radius: 1px; overflow: hidden; }
+.conf-fill { height: 100%; border-radius: 1px; background: var(--green); transition: width 0.6s cubic-bezier(0.4,0,0.2,1), background 0.4s; width: 0%; }
+.meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.meta-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 11px 13px; }
+.meta-lbl { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 3px; }
+.meta-val { font-size: 0.85rem; font-weight: 500; }
+.history-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px; flex: 1;
+}
+.sec-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 12px; }
+.history-row {
+  display: flex; align-items: center; gap: 10px; padding: 8px 11px;
+  border-radius: 8px; background: var(--surface2); margin-bottom: 5px;
+  border: 1px solid transparent; transition: border-color 0.2s;
+  animation: fadein 0.3s ease;
+}
+@keyframes fadein { from { opacity:0; transform:translateY(-3px); } to { opacity:1; transform:translateY(0); } }
+.history-row:hover { border-color: var(--border-hover); }
+.h-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+.h-cat { font-size: 0.82rem; font-weight: 500; flex: 1; }
+.h-pct { font-family: 'DM Mono', monospace; font-size: 0.73rem; color: var(--muted); }
+.h-ts { font-size: 0.7rem; color: var(--muted2); }
+.empty-msg { text-align: center; padding: 28px; font-size: 0.78rem; color: var(--muted2); }
 
-        .card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 24px;
-        }
+/* Detect */
+.detect-layout {
+  display: grid; grid-template-columns: 1fr 340px;
+  gap: 20px; max-width: 1120px; margin: 0 auto;
+}
+.detect-cam-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.detect-feed { aspect-ratio: 16/9; background: #000; position: relative; overflow: hidden; }
+#video2 { width: 100%; height: 100%; object-fit: cover; }
+#annotatedImage { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: none; }
+.detect-controls { padding: 14px 18px; display: flex; gap: 8px; border-top: 1px solid var(--border); }
+.d-status { font-size: 0.73rem; color: var(--muted); text-align: center; padding: 8px 0 12px; }
+.detect-results-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+}
+.det-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 13px; background: var(--surface2);
+  border-radius: var(--radius-sm); margin-bottom: 7px;
+  border: 1px solid transparent; transition: border-color 0.2s;
+  animation: fadein 0.3s ease;
+}
+.det-item:hover { border-color: var(--border-hover); }
+.det-fruit { font-size: 0.88rem; font-weight: 500; text-transform: capitalize; }
+.det-shelf-txt { font-size: 0.73rem; color: var(--muted); margin-top: 2px; }
+.det-right { text-align: right; }
+.det-pill {
+  padding: 3px 9px; border-radius: 10px; font-size: 0.68rem;
+  font-weight: 500; font-family: 'DM Mono', monospace; letter-spacing: 0.03em;
+  display: inline-block;
+}
+.det-pct { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--muted); margin-top: 3px; }
 
-        .card-title {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--muted);
-            margin-bottom: 16px;
-        }
+/* Shelf */
+.shelf-layout {
+  display: grid; grid-template-columns: 300px 1fr;
+  gap: 20px; max-width: 1120px; margin: 0 auto;
+}
+.form-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px; height: fit-content;
+}
+.field { margin-bottom: 13px; }
+.field label {
+  display: block; font-size: 0.65rem; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px;
+}
+.field input {
+  width: 100%; padding: 9px 13px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.86rem;
+  outline: none; transition: border-color 0.2s;
+}
+.field input:focus { border-color: rgba(181,242,61,0.35); }
+.field input::placeholder { color: var(--muted2); }
+.items-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px;
+}
+.shelf-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 14px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  margin-bottom: 7px; transition: border-color 0.2s;
+}
+.shelf-item:hover { border-color: var(--border-hover); }
+.item-icon {
+  width: 34px; height: 34px; border-radius: 8px; background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0;
+}
+.item-info { flex: 1; }
+.item-name { font-size: 0.88rem; font-weight: 500; }
+.item-meta { font-size: 0.73rem; color: var(--muted); margin-top: 2px; }
+.remove-btn {
+  background: transparent; border: none; color: var(--muted2);
+  cursor: pointer; padding: 5px 8px; border-radius: 6px;
+  font-family: 'DM Sans', sans-serif; font-size: 0.75rem; transition: all 0.2s;
+}
+.remove-btn:hover { color: var(--red); background: var(--red-dim); }
 
-        #video {
-            width: 100%;
-            border-radius: 12px;
-            background: #000;
-            min-height: 280px;
-        }
+/* Settings */
+.settings-layout { max-width: 500px; margin: 0 auto; }
+.settings-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 26px;
+}
+.settings-title { font-size: 0.98rem; font-weight: 500; margin-bottom: 5px; }
+.settings-sub { font-size: 0.8rem; color: var(--muted); margin-bottom: 22px; line-height: 1.6; }
+.hint-box {
+  margin-top: 18px; padding: 13px 15px; background: var(--surface2);
+  border-radius: var(--radius-sm); border-left: 2px solid var(--green);
+  font-size: 0.75rem; color: var(--muted); line-height: 1.7;
+}
 
-        .cam-controls { display: flex; gap: 10px; margin-top: 12px; }
+/* Toast */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 9px 18px; border-radius: 24px;
+  font-size: 0.8rem; color: var(--text); opacity: 0;
+  transition: all 0.28s cubic-bezier(0.4,0,0.2,1); pointer-events: none;
+  white-space: nowrap; z-index: 9998;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-        .btn {
-            flex: 1;
-            padding: 11px;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .btn:hover { opacity: 0.85; }
-        .btn-green { background: var(--green); color: #000; }
-        .btn-red { background: var(--red); color: white; }
-        .btn-blue { background: #2979ff; color: white; }
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .scan-btn {
-            width: 100%;
-            padding: 14px;
-            margin-top: 12px;
-            font-size: 1rem;
-            border-radius: 10px;
-            border: none;
-            background: var(--green);
-            color: #000;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .scan-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .scan-btn:hover:not(:disabled) { transform: translateY(-1px); }
-
-        /* ── Result Card ── */
-        .result-badge {
-            font-size: 1.8rem;
-            font-weight: 800;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 16px;
-            transition: all 0.3s;
-        }
-        .Fresh { background: #003d1f; color: var(--green); border: 1px solid #00e67633; }
-        .Rotten { background: #3d0000; color: var(--red); border: 1px solid #ff525233; }
-        .Consume { background: #3d2600; color: var(--orange); border: 1px solid #ffa72633; }
-        .Waiting { background: var(--border); color: var(--muted); border: 1px solid var(--border); }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .stat-row:last-child { border-bottom: none; }
-        .stat-label { color: var(--muted); font-size: 0.85rem; }
-        .stat-value { font-weight: 600; }
-
-        .confidence-bar {
-            height: 6px;
-            background: var(--border);
-            border-radius: 3px;
-            margin-top: 6px;
-            overflow: hidden;
-        }
-        .confidence-fill {
-            height: 100%;
-            border-radius: 3px;
-            background: var(--green);
-            transition: width 0.5s ease;
-        }
-
-        .scan-history { margin-top: 16px; }
-        .history-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 14px;
-            background: var(--border);
-            border-radius: 8px;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-        }
-        .history-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        /* ── Shelf Page ── */
-        .shelf-grid {
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 24px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-
-        .input-group { margin-bottom: 14px; }
-        .input-group label {
-            display: block;
-            font-size: 0.8rem;
-            color: var(--muted);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 10px 14px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: white;
-            font-size: 0.95rem;
-            outline: none;
-            transition: border 0.2s;
-        }
-        .input-group input:focus { border-color: var(--green); }
-
-        .shelf-item-card {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .shelf-item-info h3 { font-size: 1rem; margin-bottom: 4px; }
-        .shelf-item-info p { font-size: 0.8rem; color: var(--muted); }
-        .shelf-item-status {
-            text-align: right;
-            font-size: 0.85rem;
-        }
-        .status-pill {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .pill-fresh { background: #003d1f; color: var(--green); }
-        .pill-rotten { background: #3d0000; color: var(--red); }
-        .pill-consume { background: #3d2600; color: var(--orange); }
-        .pill-unknown { background: var(--border); color: var(--muted); }
-
-        /* ── Settings Page ── */
-        .settings-grid {
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        /* ── Status bar ── */
-        .status-bar {
-            text-align: center;
-            font-size: 0.8rem;
-            color: var(--muted);
-            margin-top: 10px;
-            min-height: 20px;
-        }
-
-        .page-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 24px;
-        }
-
-        .empty-state {
-            text-align: center;
-            color: var(--muted);
-            padding: 40px;
-            font-size: 0.9rem;
-        }
-
-        .delete-btn {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--red);
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.8rem;
-        }
-
-        .alert {
-            padding: 12px 16px;
-            border-radius: 8px;
-            margin-bottom: 16px;
-            font-size: 0.85rem;
-            display: none;
-        }
-        .alert-success { background: #003d1f; color: var(--green); border: 1px solid #00e67633; }
-        .alert-error { background: #3d0000; color: var(--red); border: 1px solid #ff525233; }
-    </style>
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
 </head>
 <body>
+<div class="app">
 
 <header>
-    <div class="logo">Fresh<span>Scan</span> 🥦</div>
-    <div class="nav-tabs">
-        <button class="tab active" onclick="showPage('scanner')">📷 Scanner</button>
-        <button class="tab" onclick="showPage('shelf')">📦 Shelf Tracker</button>
-        <button class="tab" onclick="showPage('settings')">⚙️ Settings</button>
-    </div>
+  <div class="wordmark"><div class="wdot"></div>FreshScan</div>
+  <nav>
+    <button class="nav-btn active" onclick="showPage('scanner',this)">Scanner</button>
+    <button class="nav-btn" onclick="showPage('detect',this)">Detect</button>
+    <button class="nav-btn" onclick="showPage('shelf',this)">Shelf</button>
+    <button class="nav-btn" onclick="showPage('settings',this)">Settings</button>
+  </nav>
 </header>
 
-<!-- ── SCANNER PAGE ── -->
+<!-- SCANNER -->
 <div id="page-scanner" class="page active">
-    <div class="scanner-grid">
-        <div class="card">
-            <div class="card-title">📷 Live Camera</div>
-            <video id="video" autoplay playsinline></video>
-            <canvas id="canvas" style="display:none"></canvas>
-            <div class="cam-controls">
-                <button class="btn btn-green" onclick="startCamera()">Start</button>
-                <button class="btn btn-red" onclick="stopCamera()">Stop</button>
-            </div>
-            <button class="scan-btn" id="scanBtn" onclick="scanOnce()" disabled>
-                🔍 Scan Now
-            </button>
-            <div class="status-bar" id="camStatus">Camera inactive</div>
+  <div class="scan-layout">
+    <div class="cam-card">
+      <div class="cam-feed" id="camFeed">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <div class="scan-line"></div>
+        <div class="cbl"></div><div class="cbr"></div>
+        <div class="cam-overlay" id="camOverlay">
+          <div class="cam-overlay-icon">⌁</div>
+          <div class="cam-overlay-text">Camera inactive</div>
         </div>
-
-        <div>
-            <div class="card" style="margin-bottom: 24px;">
-                <div class="card-title">📊 Result</div>
-                <div class="result-badge Waiting" id="resultBadge">Waiting for scan...</div>
-                <div class="stat-row">
-                    <span class="stat-label">Confidence</span>
-                    <span class="stat-value" id="confidence">—</span>
-                </div>
-                <div class="confidence-bar">
-                    <div class="confidence-fill" id="confidenceFill" style="width:0%"></div>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Shelf Life</span>
-                    <span class="stat-value" id="shelfLife">—</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label">Last Scanned</span>
-                    <span class="stat-value" id="lastScanned">—</span>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">🕐 Scan History</div>
-                <div id="scanHistory">
-                    <div class="empty-state">No scans yet</div>
-                </div>
-            </div>
-        </div>
+      </div>
+      <div class="cam-controls">
+        <button class="btn btn-ghost" onclick="startCamera()">Start camera</button>
+        <button class="btn btn-ghost" onclick="stopCamera()">Stop</button>
+        <button class="btn btn-save" id="scanBtn" onclick="scanOnce(true)" disabled>Save scan</button>
+      </div>
     </div>
+
+    <div class="right-panel">
+      <div class="result-card" id="resultCard">
+        <div class="result-header">
+          <div>
+            <div class="result-label">Analysis</div>
+            <div class="result-status s-waiting" id="resultStatus">Waiting</div>
+          </div>
+          <div class="r-badge b-waiting" id="resultBadge">—</div>
+        </div>
+        <div class="conf-section">
+          <div class="conf-header">
+            <span class="conf-label">Confidence</span>
+            <span class="conf-val" id="confVal">—</span>
+          </div>
+          <div class="conf-track"><div class="conf-fill" id="confFill"></div></div>
+        </div>
+        <div class="meta-grid">
+          <div class="meta-item"><div class="meta-lbl">Shelf life</div><div class="meta-val" id="shelfLife">—</div></div>
+          <div class="meta-item"><div class="meta-lbl">Scanned at</div><div class="meta-val" id="lastScanned">—</div></div>
+        </div>
+      </div>
+      <div class="history-card">
+        <div class="sec-title">Recent scans</div>
+        <div id="historyList"><div class="empty-msg">No scans yet</div></div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- ── SHELF TRACKER PAGE ── -->
+<!-- DETECT -->
+<div id="page-detect" class="page">
+  <div class="detect-layout">
+    <div class="detect-cam-card">
+      <div class="detect-feed">
+        <video id="video2" autoplay playsinline></video>
+        <img id="annotatedImage" alt="">
+        <canvas id="canvas2" style="display:none"></canvas>
+      </div>
+      <div class="detect-controls">
+        <button class="btn btn-ghost" onclick="startDetect()">Start camera</button>
+        <button class="btn btn-ghost" onclick="stopDetect()">Stop</button>
+      </div>
+      <div class="d-status" id="detectStatus">Camera inactive</div>
+    </div>
+    <div class="detect-results-card">
+      <div class="sec-title">Detected objects</div>
+      <div id="detectList"><div class="empty-msg">Start camera to detect</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- SHELF -->
 <div id="page-shelf" class="page">
-    <div class="shelf-grid">
-        <div>
-            <div class="card">
-                <div class="card-title">➕ Add Item</div>
-                <div class="input-group">
-                    <label>Item Name</label>
-                    <input type="text" id="itemName" placeholder="e.g. Bananas">
-                </div>
-                <div class="input-group">
-                    <label>Shelf Number</label>
-                    <input type="text" id="shelfNumber" placeholder="e.g. A1">
-                </div>
-                <div class="input-group">
-                    <label>Box Number</label>
-                    <input type="text" id="boxNumber" placeholder="e.g. 01">
-                </div>
-                <div class="input-group">
-                    <label>Alert Email (optional)</label>
-                    <input type="email" id="itemEmail" placeholder="alert@email.com">
-                </div>
-                <button class="btn btn-green" style="width:100%" onclick="addShelfItem()">Add Item</button>
-                <div class="alert alert-success" id="addAlert">✅ Item added successfully!</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">📦 Tracked Items</div>
-            <div id="shelfList">
-                <div class="empty-state">No items tracked yet</div>
-            </div>
-        </div>
+  <div class="shelf-layout">
+    <div class="form-card">
+      <div class="sec-title" style="margin-bottom:16px">Add item</div>
+      <div class="field"><label>Item name</label><input id="itemName" placeholder="e.g. Bananas" type="text"></div>
+      <div class="field"><label>Shelf</label><input id="shelfNumber" placeholder="e.g. A1" type="text"></div>
+      <div class="field"><label>Box</label><input id="boxNumber" placeholder="e.g. 01" type="text"></div>
+      <div class="field"><label>Alert email</label><input id="itemEmail" placeholder="optional" type="email"></div>
+      <button class="btn btn-primary" style="width:100%;flex:none" onclick="addItem()">Add to shelf</button>
     </div>
+    <div class="items-card">
+      <div class="sec-title" style="margin-bottom:16px">Tracked items</div>
+      <div id="shelfList"><div class="empty-msg">No items tracked</div></div>
+    </div>
+  </div>
 </div>
 
-<!-- ── SETTINGS PAGE ── -->
+<!-- SETTINGS -->
 <div id="page-settings" class="page">
-    <div class="settings-grid">
-        <div class="card">
-            <div class="card-title">📧 Email Notifications</div>
-            <p style="font-size:0.85rem; color:var(--muted); margin-bottom:16px;">
-                Get alerts when items become "Consume Soon" or "Rotten"
-            </p>
-            <div class="input-group">
-                <label>Your Gmail Address</label>
-                <input type="email" id="senderEmail" placeholder="your@gmail.com">
-            </div>
-            <div class="input-group">
-                <label>Gmail App Password</label>
-                <input type="password" id="senderPassword" placeholder="xxxx xxxx xxxx xxxx">
-            </div>
-            <div class="input-group">
-                <label>Send Alerts To</label>
-                <input type="email" id="recipientEmail" placeholder="recipient@email.com">
-            </div>
-            <button class="btn btn-green" style="width:100%; margin-bottom:10px" onclick="saveEmailConfig()">
-                Save Configuration
-            </button>
-            <div class="alert alert-success" id="emailAlert">✅ Email configured!</div>
-            <div style="margin-top:16px; padding:14px; background:var(--bg); border-radius:8px; font-size:0.8rem; color:var(--muted);">
-                💡 Use a Gmail App Password, not your regular password.
-                Go to Google Account → Security → 2-Step Verification → App Passwords
-            </div>
-        </div>
+  <div class="settings-layout">
+    <div class="settings-card">
+      <div class="settings-title">Email notifications</div>
+      <div class="settings-sub">Receive alerts when tracked items degrade to Consume Soon or Rotten status.</div>
+      <div class="field"><label>Gmail address</label><input id="senderEmail" placeholder="your@gmail.com" type="email"></div>
+      <div class="field"><label>App password</label><input id="senderPassword" placeholder="xxxx xxxx xxxx xxxx" type="password"></div>
+      <div class="field"><label>Recipient</label><input id="recipientEmail" placeholder="recipient@email.com" type="email"></div>
+      <button class="btn btn-primary" style="width:100%;flex:none" onclick="saveEmail()">Save configuration</button>
+      <div class="hint-box">Use a Gmail App Password — not your regular password.<br>Google Account → Security → 2-Step Verification → App Passwords</div>
     </div>
+  </div>
 </div>
+
+</div>
+<div class="toast" id="toast"></div>
 
 <script>
-    let stream = null;
-    let scanHistory = [];
+let stream=null, autoInterval=null, scanHistory=[];
+let dStream=null, dInterval=null;
 
-    // ── Navigation ──
-    function showPage(page) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById('page-' + page).classList.add('active');
-        event.target.classList.add('active');
-        if (page === 'shelf') loadShelfItems();
-    }
+function toast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
 
-    // ── Camera ──
-    async function startCamera() {
-        try {
-            stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            document.getElementById('video').srcObject = stream;
-            document.getElementById('scanBtn').disabled = false;
-            document.getElementById('camStatus').textContent = '✅ Camera active — press Scan Now to analyze';
-        } catch {
-            document.getElementById('camStatus').textContent = '❌ Camera access denied';
-        }
-    }
+function showPage(id,btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='shelf') loadShelf();
+}
 
-    function stopCamera() {
-        if (stream) {
-            stream.getTracks().forEach(t => t.stop());
-            stream = null;
-        }
-        document.getElementById('scanBtn').disabled = true;
-        document.getElementById('camStatus').textContent = 'Camera inactive';
-    }
+async function startCamera() {
+  try {
+    stream=await navigator.mediaDevices.getUserMedia({video:true});
+    document.getElementById('video').srcObject=stream;
+    document.getElementById('camOverlay').classList.add('hidden');
+    document.getElementById('camFeed').classList.add('scanning');
+    document.getElementById('scanBtn').disabled=false;
+    autoInterval=setInterval(()=>scanOnce(false),2000);
+  } catch { toast('Camera access denied'); }
+}
 
-    // ── Scan Once ──
-    async function scanOnce() {
-        const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
+function stopCamera() {
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  if(autoInterval){clearInterval(autoInterval);autoInterval=null;}
+  document.getElementById('camOverlay').classList.remove('hidden');
+  document.getElementById('camFeed').classList.remove('scanning');
+  document.getElementById('scanBtn').disabled=true;
+}
 
-        document.getElementById('camStatus').textContent = '⏳ Analyzing...';
+async function scanOnce(save=true) {
+  const v=document.getElementById('video'), c=document.getElementById('canvas');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  c.toBlob(async blob=>{
+    const fd=new FormData(); fd.append('file',blob,'frame.jpg');
+    try {
+      const r=await fetch('/predict',{method:'POST',body:fd});
+      const d=await r.json();
+      updateResult(d);
+      if(save){addHistory(d);toast('Scan saved');}
+    } catch { if(save) toast('Scan failed'); }
+  },'image/jpeg');
+}
 
-        canvas.toBlob(async (blob) => {
-            const formData = new FormData();
-            formData.append('file', blob, 'frame.jpg');
-            try {
-                const res = await fetch('/predict', { method: 'POST', body: formData });
-                const data = await res.json();
-                updateResult(data);
-                addToHistory(data);
-                document.getElementById('camStatus').textContent = '✅ Scan complete';
-            } catch {
-                document.getElementById('camStatus').textContent = '❌ Scan failed';
-            }
-        }, 'image/jpeg');
-    }
+function updateResult(d) {
+  const cat=d.category;
+  const key=cat==='Consume Soon'?'consume':cat.toLowerCase();
+  const colors={fresh:'var(--green)',rotten:'var(--red)',consume:'var(--orange)'};
+  const color=colors[key]||'var(--muted2)';
+  document.getElementById('resultCard').className='result-card state-'+key;
+  const st=document.getElementById('resultStatus');
+  st.textContent=cat; st.className='result-status s-'+key;
+  const bg=document.getElementById('resultBadge');
+  bg.textContent=cat==='Fresh'?'FRESH':cat==='Rotten'?'ROTTEN':'CONSUME SOON';
+  bg.className='r-badge b-'+key;
+  document.getElementById('confVal').textContent=d.confidence+'%';
+  const fill=document.getElementById('confFill');
+  fill.style.width=d.confidence+'%'; fill.style.background=color;
+  document.getElementById('shelfLife').textContent=d.shelf_life||'—';
+  document.getElementById('lastScanned').textContent=d.timestamp||new Date().toLocaleTimeString();
+}
 
-    // ── Update Result UI ──
-    function updateResult(data) {
-        const badge = document.getElementById('resultBadge');
-        const cssClass = data.category === 'Consume Soon' ? 'Consume' : data.category;
-        badge.className = 'result-badge ' + cssClass;
-        badge.textContent = (data.category === 'Fresh' ? '✅ ' : data.category === 'Rotten' ? '❌ ' : '⚠️ ') + data.category;
-        document.getElementById('confidence').textContent = data.confidence + '%';
-        document.getElementById('confidenceFill').style.width = data.confidence + '%';
-        document.getElementById('confidenceFill').style.background =
-            data.category === 'Fresh' ? 'var(--green)' :
-            data.category === 'Rotten' ? 'var(--red)' : 'var(--orange)';
-        document.getElementById('shelfLife').textContent = data.shelf_life;
-        document.getElementById('lastScanned').textContent = data.timestamp || new Date().toLocaleTimeString();
-    }
+function addHistory(d) {
+  scanHistory.unshift(d); if(scanHistory.length>6) scanHistory.pop();
+  const cm={'Fresh':'var(--green)','Rotten':'var(--red)','Consume Soon':'var(--orange)'};
+  document.getElementById('historyList').innerHTML=scanHistory.map(s=>`
+    <div class="history-row">
+      <div class="h-dot" style="background:${cm[s.category]||'var(--muted2)'}"></div>
+      <div class="h-cat">${s.category}</div>
+      <div class="h-pct">${s.confidence}%</div>
+      <div class="h-ts">${s.timestamp||''}</div>
+    </div>`).join('');
+}
 
-    // ── Scan History ──
-    function addToHistory(data) {
-        scanHistory.unshift(data);
-        if (scanHistory.length > 5) scanHistory.pop();
-        const container = document.getElementById('scanHistory');
-        container.innerHTML = scanHistory.map(s => `
-            <div class="history-item">
-                <div style="display:flex; align-items:center">
-                    <div class="history-dot" style="background:${
-                        s.category === 'Fresh' ? 'var(--green)' :
-                        s.category === 'Rotten' ? 'var(--red)' : 'var(--orange)'
-                    }"></div>
-                    ${s.category}
-                </div>
-                <div style="color:var(--muted)">${s.confidence}% — ${s.shelf_life}</div>
-                <div style="color:var(--muted)">${s.timestamp || ''}</div>
+async function startDetect() {
+  try {
+    dStream=await navigator.mediaDevices.getUserMedia({video:true});
+    document.getElementById('video2').srcObject=dStream;
+    document.getElementById('detectStatus').textContent='Scanning every 3 seconds';
+    dInterval=setInterval(runDetect,3000);
+  } catch { toast('Camera access denied'); }
+}
+
+function stopDetect() {
+  if(dStream){dStream.getTracks().forEach(t=>t.stop());dStream=null;}
+  if(dInterval){clearInterval(dInterval);dInterval=null;}
+  document.getElementById('detectStatus').textContent='Camera inactive';
+}
+
+async function runDetect() {
+  const v=document.getElementById('video2'),c=document.getElementById('canvas2');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  c.toBlob(async blob=>{
+    const fd=new FormData(); fd.append('file',blob,'frame.jpg');
+    try {
+      const r=await fetch('/detect',{method:'POST',body:fd});
+      const d=await r.json();
+      const img=document.getElementById('annotatedImage');
+      img.src='data:image/jpeg;base64,'+d.annotated_image;
+      img.style.display='block';
+      const pm={'Fresh':'b-fresh','Rotten':'b-rotten','Consume Soon':'b-consume'};
+      document.getElementById('detectList').innerHTML=d.count===0
+        ?'<div class="empty-msg">No fruits detected</div>'
+        :d.detections.map(det=>`
+          <div class="det-item">
+            <div>
+              <div class="det-fruit">${det.fruit}</div>
+              <div class="det-shelf-txt">${det.shelf_life}</div>
             </div>
-        `).join('');
-    }
+            <div class="det-right">
+              <div class="det-pill ${pm[det.category]||'b-waiting'}">${det.category}</div>
+              <div class="det-pct">${det.confidence}%</div>
+            </div>
+          </div>`).join('');
+    } catch(e){console.error(e);}
+  },'image/jpeg');
+}
 
-    // ── Shelf Tracker ──
-    async function addShelfItem() {
-        const name = document.getElementById('itemName').value.trim();
-        const shelf = document.getElementById('shelfNumber').value.trim();
-        const box = document.getElementById('boxNumber').value.trim();
-        const email = document.getElementById('itemEmail').value.trim();
+async function addItem() {
+  const name=document.getElementById('itemName').value.trim();
+  const shelf=document.getElementById('shelfNumber').value.trim();
+  const box=document.getElementById('boxNumber').value.trim();
+  const email=document.getElementById('itemEmail').value.trim();
+  if(!name||!shelf||!box){toast('Fill in all required fields');return;}
+  await fetch('/shelf/add',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({item_name:name,shelf_number:shelf,box_number:box,email})
+  });
+  ['itemName','shelfNumber','boxNumber','itemEmail'].forEach(id=>document.getElementById(id).value='');
+  toast('Item added'); loadShelf();
+}
 
-        if (!name || !shelf || !box) return alert('Please fill in item name, shelf and box number');
+async function loadShelf() {
+  const r=await fetch('/shelf/all');
+  const data=await r.json();
+  const items=Object.values(data);
+  const pm={'Fresh':'b-fresh','Rotten':'b-rotten','Consume Soon':'b-consume'};
+  document.getElementById('shelfList').innerHTML=items.length===0
+    ?'<div class="empty-msg">No items tracked</div>'
+    :items.map(item=>{
+      const l=item.latest;
+      return `<div class="shelf-item">
+        <div class="item-icon">📦</div>
+        <div class="item-info">
+          <div class="item-name">${item.item_name}</div>
+          <div class="item-meta">Shelf ${item.shelf_number} · Box ${item.box_number}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="det-pill ${l?(pm[l.category]||'b-waiting'):'b-waiting'}">${l?l.category:'Not scanned'}</div>
+          ${l?`<div class="det-pct" style="margin-top:4px">${l.shelf_life}</div>`:''}
+        </div>
+        <button class="remove-btn" onclick="removeItem('${item.shelf_number}','${item.box_number}')">Remove</button>
+      </div>`;
+    }).join('');
+}
 
-        await fetch('/shelf/add', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ item_name: name, shelf_number: shelf, box_number: box, email })
-        });
+async function removeItem(shelf,box) {
+  await fetch(`/shelf/${shelf}/${box}`,{method:'DELETE'});
+  toast('Removed'); loadShelf();
+}
 
-        document.getElementById('addAlert').style.display = 'block';
-        setTimeout(() => document.getElementById('addAlert').style.display = 'none', 3000);
-        document.getElementById('itemName').value = '';
-        document.getElementById('shelfNumber').value = '';
-        document.getElementById('boxNumber').value = '';
-        document.getElementById('itemEmail').value = '';
-        loadShelfItems();
-    }
-
-    async function loadShelfItems() {
-        const res = await fetch('/shelf/all');
-        const data = await res.json();
-        const container = document.getElementById('shelfList');
-        const items = Object.values(data);
-
-        if (items.length === 0) {
-            container.innerHTML = '<div class="empty-state">No items tracked yet</div>';
-            return;
-        }
-
-        container.innerHTML = items.map(item => {
-            const latest = item.latest;
-            const pillClass = !latest ? 'pill-unknown' :
-                latest.category === 'Fresh' ? 'pill-fresh' :
-                latest.category === 'Rotten' ? 'pill-rotten' : 'pill-consume';
-            return `
-                <div class="shelf-item-card">
-                    <div class="shelf-item-info">
-                        <h3>${item.item_name}</h3>
-                        <p>Shelf ${item.shelf_number} · Box ${item.box_number} · Added ${item.added_at}</p>
-                    </div>
-                    <div class="shelf-item-status">
-                        <div class="status-pill ${pillClass}">
-                            ${latest ? latest.category : 'Not scanned'}
-                        </div>
-                        ${latest ? `<div style="font-size:0.75rem; color:var(--muted); margin-top:4px">${latest.shelf_life}</div>` : ''}
-                    </div>
-                    <button class="delete-btn" onclick="deleteItem('${item.shelf_number}', '${item.box_number}')">Remove</button>
-                </div>
-            `;
-        }).join('');
-    }
-
-    async function deleteItem(shelf, box) {
-        await fetch(`/shelf/${shelf}/${box}`, { method: 'DELETE' });
-        loadShelfItems();
-    }
-
-    // ── Email Config ──
-    async function saveEmailConfig() {
-        const sender = document.getElementById('senderEmail').value;
-        const password = document.getElementById('senderPassword').value;
-        const recipient = document.getElementById('recipientEmail').value;
-
-        await fetch('/config/email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                sender_email: sender,
-                sender_password: password,
-                recipient_email: recipient
-            })
-        });
-
-        document.getElementById('emailAlert').style.display = 'block';
-        setTimeout(() => document.getElementById('emailAlert').style.display = 'none', 3000);
-    }
+async function saveEmail() {
+  await fetch('/config/email',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      sender_email:document.getElementById('senderEmail').value,
+      sender_password:document.getElementById('senderPassword').value,
+      recipient_email:document.getElementById('recipientEmail').value
+    })
+  });
+  toast('Configuration saved');
+}
 </script>
 </body>
 </html>
