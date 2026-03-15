@@ -136,9 +136,11 @@ Visit `http://127.0.0.1:8000`
 
 ---
 
-## Built at
+## Built by
 
-College Hackathon — built in 48 hours by a team of 3.
+Bappaditya-kuilya.
+
+
 
 ---
 
