@@ -23,6 +23,7 @@ class ShelfStore:
     def __init__(self, path: str = DB_PATH):
         self.db = sqlite3.connect(path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
+        self.db.execute("PRAGMA journal_mode=WAL")
         self.db.executescript(_SCHEMA)
 
     def add(self, shelf: str, box: str, item_name: str, email: str | None) -> str:
@@ -31,11 +32,12 @@ class ShelfStore:
             "INSERT OR REPLACE INTO items VALUES (?,?,?,?,?,?)",
             (shelf, box, item_name, email, now, None),
         )
+        self.db.execute("DELETE FROM scans WHERE shelf=? AND box=?", (shelf, box))
         self.db.commit()
         return f"{shelf}_{box}"
 
     def record_scan(self, shelf: str, box: str, result: dict) -> None:
-        ts = datetime.now().strftime("%Y-%m-%d %H:%M")
+        ts = result["timestamp"] if "timestamp" in result else datetime.now().strftime("%Y-%m-%d %H:%M")
         self.db.execute(
             "INSERT INTO scans (shelf, box, category, confidence, shelf_life, ts)"
             " VALUES (?,?,?,?,?,?)",

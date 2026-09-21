@@ -5,10 +5,16 @@ import numpy as np
 from PIL import Image
 
 from .config import FRESH_THRESHOLD, LABELS
+from .errors import invalid
+
+Image.MAX_IMAGE_PIXELS = 50_000_000
 
 
 def preprocess_image(image_bytes: bytes, size: int = 224) -> np.ndarray:
-    img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    try:
+        img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+    except Exception:
+        raise invalid("Unreadable image")
     img = img.resize((size, size))
     return np.expand_dims(np.asarray(img) / 255.0, 0)
 

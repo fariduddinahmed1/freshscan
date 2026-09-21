@@ -1,4 +1,5 @@
 """Gmail SMTP alerts. Explicit params in, bool out — no globals."""
+import logging
 import smtplib
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
@@ -14,7 +15,7 @@ def send_alert(sender: str, password: str, recipient: str,
         msg["To"] = recipient
         msg["Subject"] = f"FreshScan Alert — {item_name} needs attention!"
         msg.attach(MIMEText(f"""
-FreshScan Alert
+FreshScan Alert 🚨
 
 Item: {item_name}
 Location: Shelf {shelf}, Box {box}
@@ -32,6 +33,9 @@ Please take action immediately.
         server.sendmail(sender, recipient, msg.as_string())
         server.quit()
         return True
+    except smtplib.SMTPException as e:
+        logging.warning("Email error: %s", e)
+        return False
     except Exception as e:
-        print(f"Email error: {e}")
+        logging.warning("Email error: %s", e)
         return False
