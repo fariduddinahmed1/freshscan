@@ -2,7 +2,7 @@
 import os
 
 MODEL_PATH = os.getenv("FRESHSCAN_MODEL", "model/freshscan_model.keras")
-YOLO_WEIGHTS = os.getenv("FRESHSCAN_YOLO", "yolov8n.pt")
+YOLO_MODEL = os.getenv("FRESHSCAN_YOLO", "model/yolov8n.onnx")
 DB_PATH = os.path.abspath(os.getenv("FRESHSCAN_DB", "freshscan.db"))
 
 if not os.path.isfile(MODEL_PATH):

@@ -35,8 +35,8 @@ async def lifespan(app: FastAPI):
     except Exception:
         logging.exception("Failed to load model: %s", MODEL_PATH)
         raise
-    from core.detect import get_model
-    get_model()
+    from core.detect import warmup
+    warmup()
     state["shelf"] = ShelfStore()
     yield
 
@@ -47,6 +47,8 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 
 @app.get("/health")
 def health():
+    if "model" not in state or "shelf" not in state:
+        raise HTTPException(status_code=503, detail="Not ready")
     return {"status": "FreshScan is running!"}
 
 
