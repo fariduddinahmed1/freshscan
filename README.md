@@ -45,11 +45,11 @@ FreshScan uses two AI models working together to detect whether food is fresh, s
 
 ## Model Performance
 
-- **Architecture**: MobileNetV2 (frozen base) + GlobalAveragePooling2D + Dense(128) + Dense(2)
+- **Architecture**: MobileNetV2 (frozen base) + GlobalAveragePooling2D + Dense(128) + Dense(2) — 2 softmax outputs (`fresh`, `rotten`)
 - **Training**: 5 epochs on Google Colab T4 GPU
 - **Val Accuracy**: 99.44%
 - **Dataset**: 4,740 fresh + 6,161 rotten images (train), 2,698 test images
-- **Classes**: Fresh → Consume Soon → Rotten (3-tier classification)
+- **Classes**: model outputs 2 labels (`fresh`, `rotten`); `categorize()` in `core/classify.py` maps to 3 display tiers via `FRESH_THRESHOLD=85.0`: fresh ≥85% → Fresh, fresh <85% → Consume Soon, rotten → Rotten
 
 ---
 
@@ -117,9 +117,9 @@ uv venv
 uv pip install -r requirements.txt
 ```
 
-### 4. Add the trained model
+### 4. Trained model (already in repo)
 
-Download `freshscan_model.keras` from Google Drive and place it in `model/`.
+`model/freshscan_model.keras` is checked in — no download needed.
 
 ### 5. Run the server
 
@@ -128,6 +128,23 @@ uvicorn api.main:app --reload
 ```
 
 Visit `http://127.0.0.1:8000`
+
+---
+
+## Testing
+
+```bash
+uv pip install -r requirements.txt
+.venv/bin/python -m pytest tests/ -q
+```
+
+### Env overrides
+
+| Var | Default | Purpose |
+|-----|---------|---------|
+| `FRESHSCAN_MODEL` | `model/freshscan_model.keras` | Freshness classifier weights |
+| `FRESHSCAN_DB` | `freshscan.db` | SQLite shelf tracker path |
+| `FRESHSCAN_YOLO` | `yolov8n.pt` | YOLOv8 weights |
 
 ---
 
