@@ -1,11 +1,12 @@
 """FreshScan API. Thin routes only — all logic lives in core/."""
 import base64
+import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
 
 import cv2
 import tensorflow as tf
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -13,6 +14,7 @@ from api.schemas import EmailConfig, ShelfItem
 from core.classify import classify_batch, classify_bytes, preprocess_image
 from core.config import MODEL_PATH
 from core.detect import detect_fruits
+from core.errors import read_upload_bytes
 from core.mail import send_alert
 from core.shelf import ShelfStore
 
@@ -20,9 +22,21 @@ EMAIL_CONFIG = {"sender": "", "password": "", "recipient": ""}
 state: dict = {}
 
 
+def _require_model():
+    if "model" not in state:
+        raise HTTPException(status_code=503, detail="Model not loaded")
+    return state["model"]
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    state["model"] = tf.keras.models.load_model(MODEL_PATH)
+    try:
+        state["model"] = tf.keras.models.load_model(MODEL_PATH)
+    except Exception:
+        logging.exception("Failed to load model: %s", MODEL_PATH)
+        raise
+    from core.detect import get_model
+    get_model()
     state["shelf"] = ShelfStore()
     yield
 
@@ -46,7 +60,8 @@ def configure_email(config: EmailConfig):
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    result = classify_bytes(state["model"], await file.read())
+    model = _require_model()
+    result = classify_bytes(model, await read_upload_bytes(file))
     result["timestamp"] = datetime.now().strftime("%H:%M:%S")
     return result
 
@@ -59,7 +74,8 @@ def add_shelf_item(item: ShelfItem):
 
 @app.post("/shelf/scan/{shelf_number}/{box_number}")
 async def scan_shelf_item(shelf_number: str, box_number: str, file: UploadFile = File(...)):
-    result = classify_bytes(state["model"], await file.read())
+    model = _require_model()
+    result = classify_bytes(model, await read_upload_bytes(file))
     result["timestamp"] = datetime.now().strftime("%Y-%m-%d %H:%M")
     email_sent = False
     items = state["shelf"].get_all()
@@ -90,20 +106,27 @@ def delete_shelf_item(shelf_number: str, box_number: str):
 
 @app.post("/detect")
 async def detect(file: UploadFile = File(...)):
-    detections, img = detect_fruits(await file.read())
+    model = _require_model()
+    detections, img = detect_fruits(await read_upload_bytes(file))
     results = []
     for det in detections:
         x1, y1, x2, y2 = det["bbox"]
+        if x2 <= x1 or y2 <= y1:
+            continue
         cropped = img[y1:y2, x1:x2]
-        _, buffer = cv2.imencode(".jpg", cropped)
-        result = classify_batch(state["model"], preprocess_image(buffer.tobytes()))
+        ok, buffer = cv2.imencode(".jpg", cropped)
+        if not ok:
+            continue
+        result = classify_batch(model, preprocess_image(buffer.tobytes()))
         color = (0, 255, 0) if result["category"] == "Fresh" \
             else (0, 0, 255) if result["category"] == "Rotten" else (0, 165, 255)
         cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
         cv2.putText(img, f"{det['class']} - {result['category']} {result['confidence']:.0f}%",
                     (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
         results.append({"fruit": det["class"], **result, "bbox": det["bbox"]})
-    _, buffer = cv2.imencode(".jpg", img)
+    ok, buffer = cv2.imencode(".jpg", img)
+    if not ok:
+        raise RuntimeError("failed to encode result image")
     return {"detections": results,
             "annotated_image": base64.b64encode(buffer).decode("utf-8"),
             "count": len(results)}
