@@ -35,7 +35,7 @@ FreshScan uses two AI models working together to detect whether food is fresh, s
 | Layer | Technology |
 |-------|------------|
 | ML Model | TensorFlow + MobileNetV2 (transfer learning) |
-| Object Detection | YOLOv8n (Ultralytics) |
+| Object Detection | YOLOv8n ONNX via OpenCV DNN (no torch) |
 | Backend | FastAPI + Uvicorn |
 | Frontend | HTML / CSS / JS (single file) |
 | Notifications | Gmail SMTP |

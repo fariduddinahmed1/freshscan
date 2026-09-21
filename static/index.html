@@ -477,9 +477,7 @@ function stopCamera() {
 }
 
 async function scanOnce(save=true) {
-  const v=document.getElementById('video'), c=document.getElementById('canvas');
-  c.width=v.videoWidth; c.height=v.videoHeight;
-  c.getContext('2d').drawImage(v,0,0);
+  const v=document.getElementById('video'), c=capture(v,640);
   const btn=document.getElementById('scanBtn');
   if(save){btn.disabled=true; btn.textContent='Analyzing...';}
   c.toBlob(async blob=>{
@@ -540,9 +538,7 @@ function stopDetect() {
 }
 
 async function runDetect() {
-  const v=document.getElementById('video2'),c=document.getElementById('canvas2');
-  c.width=v.videoWidth; c.height=v.videoHeight;
-  c.getContext('2d').drawImage(v,0,0);
+  const v=document.getElementById('video2'), c=capture(v,1280);
   c.toBlob(async blob=>{
     const fd=new FormData(); fd.append('file',blob,'frame.jpg');
     try {
@@ -618,12 +614,20 @@ function liveVideo() {
   return null;
 }
 
+// Capture downscaled: classify needs 224px, YOLO letterboxes to 640 —
+// full-res uploads are pure latency.
+function capture(v, maxW) {
+  const s=Math.min(1, maxW/v.videoWidth);
+  const c=document.createElement('canvas');
+  c.width=Math.round(v.videoWidth*s); c.height=Math.round(v.videoHeight*s);
+  c.getContext('2d').drawImage(v,0,0,c.width,c.height);
+  return c;
+}
+
 async function scanShelfItem(shelf, box, btn) {
   const v=liveVideo();
   if(!v){ toast('Start a camera on Scanner or Detect first'); return; }
-  const c=document.createElement('canvas');
-  c.width=v.videoWidth; c.height=v.videoHeight;
-  c.getContext('2d').drawImage(v,0,0);
+  const c=capture(v,640);
   btn.textContent='Scanning...'; btn.disabled=true;
   c.toBlob(async blob=>{
     const fd=new FormData(); fd.append('file',blob,'frame.jpg');
