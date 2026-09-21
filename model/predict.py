@@ -1,45 +1,18 @@
+"""CLI inference. Reuses core/classify.py — no duplicated logic."""
+import sys
+
 import tensorflow as tf
-from PIL import Image
-import numpy as np
 
-# Load model
-model = tf.keras.models.load_model('model/freshscan_model.keras')
+from core.classify import classify_bytes
+from core.config import MODEL_PATH
 
-LABELS = ['fresh', 'rotten']
+model = tf.keras.models.load_model(MODEL_PATH)
 
-def preprocess_image(image_path):
-    img = Image.open(image_path)
-    img = img.resize((224, 224))
-    img = np.array(img)
-    img = img / 255.0
-    img = np.expand_dims(img, 0)
-    return img
 
-def predict(image_path):
-    img = preprocess_image(image_path)
-    prediction = model.predict(img)
-    confidence = float(np.max(prediction)) * 100
-    label_index = np.argmax(prediction)
-    label = LABELS[label_index]
+def predict(image_path: str) -> dict:
+    with open(image_path, "rb") as f:
+        return classify_bytes(model, f.read())
 
-    # Determine category
-    if label == 'fresh' and confidence >= 85:
-        category = 'Fresh'
-        shelf_life = f"{int(confidence / 20) + 2} days"
-    elif label == 'fresh' and confidence < 85:
-        category = 'Consume Soon'
-        shelf_life = "1-2 days"
-    else:
-        category = 'Rotten'
-        shelf_life = "Discard immediately"
 
-    return {
-        "category": category,
-        "confidence": round(confidence, 2),
-        "shelf_life": shelf_life
-    }
-
-# Test it
 if __name__ == "__main__":
-    result = predict("test_image.jpg")
-    print(result)
+    print(predict(sys.argv[1] if len(sys.argv) > 1 else "test_image.jpg"))
