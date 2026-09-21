@@ -57,15 +57,23 @@ FreshScan uses two AI models working together to detect whether food is fresh, s
 
 ```
 freshscan/
-├── model/
-│   ├── train.py          # MobileNetV2 training script
-│   ├── predict.py        # Inference pipeline
-│   └── freshscan_model.keras  # Trained model (Google Drive)
 ├── api/
-│   └── main.py           # FastAPI backend
+│   ├── main.py           # Thin routes (all logic in core/)
+│   └── schemas.py        # Pydantic request models
+├── core/
+│   ├── classify.py       # Shared freshness classifier (single copy)
+│   ├── detect.py         # YOLOv8 fruit detection
+│   ├── shelf.py          # SQLite shelf tracker (stdlib, survives restarts)
+│   ├── mail.py           # Gmail SMTP alerts
+│   └── config.py         # Paths + thresholds (FRESHSCAN_MODEL/DB/YOLO envs)
+├── model/
+│   ├── predict.py        # CLI inference (reuses core)
+│   └── freshscan_model.keras  # Trained model
 ├── static/
 │   └── index.html        # Frontend UI
-├── requirements.txt
+├── tests/
+│   └── test_categorize.py
+├── requirements.txt      # UTF-8, incl. ultralytics + python-multipart + pytest
 └── README.md
 ```
 
